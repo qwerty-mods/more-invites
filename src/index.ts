@@ -1,4 +1,3 @@
-import { request } from "http";
 import { Injector, Logger, webpack } from "replugged";
 
 const inject = new Injector();
@@ -12,35 +11,47 @@ type CodedLinks = Array<{
   from?: string; // for us
 }>;
 
-const cache: Record<string, string> = {};
+const cache: Record<
+  string,
+  {
+    code?: string;
+    fetching: boolean;
+  }
+> = {};
 
-function getCode(code: string): string {
-  if (cache[code]) {
-    return cache[code];
+async function getCode(code: string): Promise<string | undefined> {
+  if (cache[code] && !cache[code].fetching) {
+    return cache[code].code;
   }
 
-  const options = {
-    hostname: "https://dsc.gg",
-    path: code,
-    method: "GET",
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36",
-    },
-  };
+  if (!cache[code]?.fetching) {
+    cache[code] = {
+      fetching: true,
+    };
+    const options = {
+      method: "GET",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.142.86 Safari/537.36",
+      },
+    };
 
-  request(options, (res) => {
-    const { statusCode } = res;
-    if (statusCode !== 200) {
-      logger.error(`statusCode: ${statusCode}`);
+    const res = await fetch(`https://dsc.gg/${code}`, options);
+
+    if (res.status !== 200) {
+      logger.error(`Couldn't fetch code ${code} from dsc.gg. Status: ${res.status}`);
+      return "";
     }
 
     if (res.url) {
-      cache[code] = res.url.split("/")[4];
-    }
-  });
+      if (res.url.includes("discord.com/invite")) { // not bot invite link
+        cache[code].code = res.url.split("/")[4];
+        cache[code].fetching = false;
 
-  return cache[code];
+        return cache[code].code;
+      }
+    }
+  }
 }
 
 export async function start(): Promise<void> {
@@ -51,17 +62,22 @@ export async function start(): Promise<void> {
 
   if (mod && key) {
     inject.after(mod, key, ([args], res) => {
-      console.log(args, res);
-
       if (args) {
         const matches = args.matchAll(DSC_REGEX);
-        console.log(matches);
         for (const [, code] of matches) {
-          res.push({
-            code: getCode(code),
-            type: "INVITE",
-            from: "dsc.gg",
-          });
+          getCode(code)
+            .then((code) => {
+              if (code) {
+                res.push({
+                  code,
+                  type: "INVITE",
+                  from: "dsc.gg",
+                });
+              }
+            })
+            .catch((err) => {
+              logger.error(`Couldn't fetch ${code} from dsc.gg. Error: ${err}`);
+            });
         }
       }
 
