@@ -44,7 +44,8 @@ async function getCode(code: string): Promise<string | undefined> {
     }
 
     if (res.url) {
-      if (res.url.includes("discord.com/invite")) { // not bot invite link
+      if (res.url.includes("discord.com/invite")) {
+        // not bot invite link
         cache[code].code = res.url.split("/")[4];
         cache[code].fetching = false;
 
