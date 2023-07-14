@@ -15,5 +15,6 @@
   "license": "MIT",
   "type": "replugged-plugin",
   "renderer": "src/index.ts",
-  "source": "https://github.com/qwerty-mods/more-invites"
+  "source": "https://github.com/qwerty-mods/more-invites",
+  "image": "https://cdn.discordapp.net/attachments/868169571415253042/1129473840469266543/image.png"
 }
