@@ -3,7 +3,7 @@ import { Injector, Logger, webpack } from "replugged";
 const inject = new Injector();
 const logger = Logger.plugin("MoreInvites");
 
-const DSC_REGEX = /(?:https?:\/\/)?dsc\.gg\/(\w+?)(?:$|[^\w])/gm;
+const DSC_REGEX = /(?<!<)(?:https?:\/\/)?dsc\.gg\/(\w+?)(?:$|[^\w>])/gm;
 
 type CodedLinks = Array<{
   code?: string;
@@ -64,8 +64,8 @@ export async function start(): Promise<void> {
   if (mod && key) {
     inject.after(mod, key, ([args], res) => {
       if (args) {
-        const matches = args.matchAll(DSC_REGEX);
-        for (const [, code] of matches) {
+        const matches = [... new Set([...args.matchAll(DSC_REGEX)].map(match => match[1]))];
+        for (const code of matches) {
           getCode(code)
             .then((code) => {
               if (code) {
@@ -81,6 +81,12 @@ export async function start(): Promise<void> {
             });
         }
       }
+
+      res = res.filter((val, index, self) => 
+        index === self.findIndex((t) => (
+          t.code === val.code && t.type === val.type
+        ))
+      )
 
       return res;
     });
