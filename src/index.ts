@@ -64,7 +64,7 @@ export async function start(): Promise<void> {
   if (mod && key) {
     inject.after(mod, key, ([args], res) => {
       if (args) {
-        const matches = [... new Set([...args.matchAll(DSC_REGEX)].map(match => match[1]))];
+        const matches = [...new Set([...args.matchAll(DSC_REGEX)].map((match) => match[1]))];
         for (const code of matches) {
           getCode(code)
             .then((code) => {
@@ -82,11 +82,10 @@ export async function start(): Promise<void> {
         }
       }
 
-      res = res.filter((val, index, self) => 
-        index === self.findIndex((t) => (
-          t.code === val.code && t.type === val.type
-        ))
-      )
+      res = res.filter(
+        (val, index, self) =>
+          index === self.findIndex((t) => t.code === val.code && t.type === val.type),
+      );
 
       return res;
     });
