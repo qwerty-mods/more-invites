@@ -1,6 +1,6 @@
 {
   "name": "more-invites",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Adds invite embeds in your messages for third-party invites.",
   "engines": {
     "node": ">=18.0.0",
